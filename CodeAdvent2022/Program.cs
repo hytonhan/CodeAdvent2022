@@ -25,7 +25,8 @@ namespace CodeAdvent2022
                 typeof(Day05),
                 typeof(Day06),
                 typeof(Day07),
-                typeof(Day08)
+                typeof(Day08),
+                typeof(Day09)
             };
             _container.Collection.Register<IDay>(days);
 
@@ -51,14 +52,17 @@ namespace CodeAdvent2022
 
                 if (input == "all")
                 {
+                    var dayStopwatch = new Stopwatch();
                     stopwatch.Restart();
                     foreach (var day in days.OrderBy(x => x.Order))
                     {
+                        dayStopwatch.Restart();
                         Console.WriteLine($"day {day.Order}");
                         day.Run();
+                        Console.WriteLine($"Execution time for day: {dayStopwatch.ElapsedMilliseconds} ms.");
                     }
                     stopwatch.Stop();
-                    Console.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds} ms");
+                    Console.WriteLine($"Total execution time: {stopwatch.ElapsedMilliseconds} ms");
                     continue;
                 }
                 if (!int.TryParse(input, out int result))

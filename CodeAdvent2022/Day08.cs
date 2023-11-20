@@ -18,6 +18,7 @@ namespace CodeAdvent2022
 
             int[,] data = new int[99, 99];
             bool[,] visible = new bool[97, 97];
+            int[,] scenicScore = new int[99, 99];
 
             for (int i = 0; i < 97; i++)
             {
@@ -77,8 +78,55 @@ namespace CodeAdvent2022
             }
 
 
-            int visibleOnEdges = 98 * 4;
+            for (int i = 0; i < 99; i++)
+            {
+                for (int j = 0; j < 99; j++)
+                {
+                    var current = data[i, j];
 
+                    int top = 0;
+                    for (int a = i - 1; a >= 0; a--)
+                    {
+                        top++;
+                        if (data[a, j] >= current)
+                        {
+                            break;
+                        }
+                    }
+                    int bottom = 0;
+                    for (int b = i + 1; b < 99; b++)
+                    {
+                        bottom++;
+                        if (data[b, j] >= current)
+                        {
+                            break;
+                        }
+                    }
+
+                    int left = 0;
+                    for (int a = j - 1; a >= 0; a--)
+                    {
+                        left++;
+                        if (data[i, a] >= current)
+                        {
+                            break;
+                        }
+                    }
+                    int right = 0;
+                    for (int b = j + 1; b < 99; b++)
+                    {
+                        right++;
+                        if (data[i, b] >= current)
+                        {
+                            break;
+                        }
+                    }
+
+                    scenicScore[i, j] = left * right * top * bottom;
+                }
+            }
+
+            int visibleOnEdges = 98 * 4;
             int totalVisible = 0;
             for (int i = 0; i < 97; i++)
             {
@@ -88,11 +136,28 @@ namespace CodeAdvent2022
                     {
                         totalVisible++;
                     }
+
+
                 }
             }
             totalVisible += visibleOnEdges;
 
+            int topScore = 0;
+            for (int i = 0; i < 99; i++)
+            {
+                for (int j = 0; j < 99; j++)
+                {
+                    if (scenicScore[i, j] > topScore)
+                    {
+                        topScore = scenicScore[i, j];
+                    }
+
+
+                }
+            }
+
             Console.WriteLine($"Total visible: {totalVisible}");
+            Console.WriteLine($"Top scenic score: {topScore}");
         }
     }
 }
