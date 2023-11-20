@@ -24,7 +24,8 @@ namespace CodeAdvent2022
                 typeof(Day04),
                 typeof(Day05),
                 typeof(Day06),
-                typeof(Day07)
+                typeof(Day07),
+                typeof(Day08)
             };
             _container.Collection.Register<IDay>(days);
 
