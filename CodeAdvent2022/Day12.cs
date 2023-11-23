@@ -292,7 +292,7 @@ namespace CodeAdvent2022
                     }
 
                     DrawPath(currentNode);
-                    //Thread.Sleep(100);
+                    //Thread.Sleep(10);
                 }
                 var nextNode = OpenList.Dequeue();
                 if (nextNode.Location == this.EndNode.Location)
