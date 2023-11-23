@@ -38,7 +38,8 @@ namespace CodeAdvent2022
 
         public static void Main()
         {
-            Console.WriteLine("Hello world!");
+            Console.ForegroundColor = ConsoleColor.White;
+            //Console.WriteLine("Hello world!");
 
             var type = typeof(IDay);
             var types = AppDomain.CurrentDomain.GetAssemblies()
