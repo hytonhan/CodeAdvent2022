@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -16,6 +17,8 @@ namespace CodeAdvent2022
 
         public void Run()
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
             Console.ForegroundColor = ConsoleColor.White;
             string[] lines = File.ReadAllLines(_inputFilename);
             //string[] lines = File.ReadAllLines(_testInputFilename);
@@ -48,19 +51,7 @@ namespace CodeAdvent2022
                 }
             }
 
-            bool drawFirst = false;
-            if (drawFirst)
-            {
-                Console.Clear();
-                for (int i = 0; i < height; i++)
-                {
-                    Console.SetCursorPosition(0, i);
-                    for (int j = 0; j < width; j++)
-                    {
-                        Console.Write(".");
-                    }
-                }
-            }
+            bool drawFirst = true;
             var search = new SearchClass(points, start, end, width, height, drawFirst);
             Console.CursorVisible = false;
             var path = search.FindPath();
@@ -72,9 +63,10 @@ namespace CodeAdvent2022
             }
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"");
-            Console.WriteLine($"Steps: {path.Count()}");
+            Console.WriteLine($"Steps: {path.Count()}. Execution time: {stopwatch.ElapsedMilliseconds} ms");
 
             //PART 2
+            stopwatch.Restart();
             List<int> paths = new();
             int startPosCount = points.Where(x => x.Height == 0).Count();
             Console.WriteLine($"\nstart positions: {startPosCount}");
@@ -88,9 +80,9 @@ namespace CodeAdvent2022
                 Console.Write($"{counter}/{startPosCount}.");
 
                 search.OpenList = new();
-                foreach(var list in search.Nodes)
+                foreach (var list in search.Nodes)
                 {
-                    foreach(var node in list)
+                    foreach (var node in list)
                     {
                         node.State = NodeState.Untested;
                         node.ParentNode = null;
@@ -114,7 +106,9 @@ namespace CodeAdvent2022
                 counter++;
             }
 
-            Console.WriteLine($"Shortest path from height 'a': {paths.Where(x => x != 0).OrderBy(x => x).First()}");
+            stopwatch.Stop();
+            var avg = (float)stopwatch.ElapsedMilliseconds / (float)startPosCount;
+            Console.WriteLine($"Shortest path from height 'a': {paths.Where(x => x != 0).OrderBy(x => x).First()}. Execution time (part 2): {stopwatch.ElapsedMilliseconds} ms. Avg: {avg}.");
         }
     }
 
@@ -132,6 +126,20 @@ namespace CodeAdvent2022
             Height = height;
         }
 
+    }
+
+    internal class DrawBuffer
+    {
+        public DrawBuffer(int width, int height)
+        {
+            Width = width;
+            Height = height;
+
+        }
+
+        public int Width { get; set; }
+
+        public int Height { get; set; }
     }
 
     internal class SearchClass
@@ -171,7 +179,14 @@ namespace CodeAdvent2022
             Width = width;
             Height = height;
             ShouldDraw = drawPath;
+
+            CharMap = new char[width, height];
+            DrawQueue = new();
         }
+
+        public char[,] CharMap { get; set; }
+
+        private Queue<(int x, int y, char @char)> DrawQueue { get; set; }
 
         public bool ShouldDraw { get; set; }
 
@@ -206,7 +221,21 @@ namespace CodeAdvent2022
             }
             if (ShouldDraw)
             {
-                DrawPath(EndNode);
+                //DrawPath(EndNode);
+                while (DrawQueue.Count > 0)
+                {
+                    var temp = DrawQueue.Dequeue();
+                    if (temp.@char == '<' || temp.@char == '>' || temp.@char == 'v' || temp.@char == '^')
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
+                    Console.SetCursorPosition(temp.x, temp.y);
+                    Console.Write(temp.@char);
+                }
             }
             return path;
         }
@@ -231,12 +260,78 @@ namespace CodeAdvent2022
                     Console.SetCursorPosition(node.Location.X, node.Location.Y);
                     if (node == EndNode)
                     {
-                        Console.Write('E');
+                        //Console.Write('E');
+                        CharMap[node.Location.X, node.Location.Y] = 'E';
                         continue;
                     }
                     var @char = colors[(int)(node.Location.Height * temp)];
-                    Console.Write(@char);
+                    CharMap[node.Location.X, node.Location.Y] = @char;
+                    //Console.Write(@char);
                 }
+            }
+            for(int i = 0; i < Height; i++)
+            {
+                Console.SetCursorPosition(0, i);
+                for(int j = 0; j < Width; j++)
+                {
+                    Console.Write(CharMap[j, i]);
+                }
+            }
+        }
+
+        private void DrawPath(Node currentNode, Node nextNode)
+        {
+            var parent = nextNode.ParentNode;
+            var current = nextNode;
+            var path = new List<(Point, char)>();
+            while(parent != null)
+            {
+                //Console.SetCursorPosition(parent.Location.X, parent.Location.Y);
+                char symbol = '.';
+                if ((current.Location.X - parent.Location.X) == 1)
+                {
+                    symbol = '>';
+                }
+                else if ((current.Location.X - parent.Location.X) == -1)
+                {
+                    symbol = '<';
+                }
+                else if ((current.Location.Y - parent.Location.Y) == 1)
+                {
+                    symbol = 'v';
+                }
+                else if ((current.Location.Y - parent.Location.Y) == -1)
+                {
+                    symbol = '^';
+                }
+
+                if (CharMap[current.Location.X, current.Location.Y] != symbol)
+                {
+                    CharMap[current.Location.X, current.Location.Y] = symbol;
+                    (int x, int y, char @char) foo = new(current.Location.X, current.Location.Y, symbol);
+                    DrawQueue.Enqueue(foo);
+                }
+                path.Add(new (current.Location, symbol));
+                current = parent;
+                parent = parent.ParentNode;
+            }
+
+            parent = current.ParentNode;
+            current = currentNode;
+            while(current != null)
+            {
+                if(path.Where(x => x.Item1.X == current.Location.X && x.Item1.Y == current.Location.Y).Any())
+                {
+                    current = current.ParentNode;
+                    continue;
+                }
+                if (CharMap[current.Location.X, current.Location.Y] != ' ')
+                {
+                    CharMap[current.Location.X, current.Location.Y] = ' ';
+                    (int x, int y, char @char) foo = new(current.Location.X, current.Location.Y, ' ');
+                    DrawQueue.Enqueue(foo);
+                }
+                current = current.ParentNode;
             }
         }
 
@@ -264,11 +359,65 @@ namespace CodeAdvent2022
                 {
                     symbol = '^';
                 }
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write(symbol);
+
+                if (CharMap[current.Location.X, current.Location.Y] != symbol)
+                {
+                    CharMap[current.Location.X, current.Location.Y] = symbol;
+                    (int x, int y, char @char) foo = new(current.Location.X, current.Location.Y, symbol);
+                    DrawQueue.Enqueue(foo);
+                }
+                //Console.ForegroundColor = ConsoleColor.Green;
+                //Console.Write(symbol);
                 current = parent;
                 parent = parent.ParentNode;
             }
+        }
+
+        private void DrawOpenCell(Node currentNode, Node nextNode)
+        {
+            //Console.SetCursorPosition(currentNode.Location.X, currentNode.Location.Y);
+            //Console.Write(" ");
+
+            if (CharMap[currentNode.Location.X, currentNode.Location.Y] != ' ')
+            {
+                CharMap[currentNode.Location.X, currentNode.Location.Y] = ' ';
+                (int y, int x, char @char) foo = new(currentNode.Location.X, currentNode.Location.Y, ' ');
+                DrawQueue.Enqueue(foo);
+            }
+
+            var oldParent = currentNode.ParentNode;
+            List<Node> parents = new();
+            while (oldParent != null)
+            {
+                parents.Add(oldParent);
+                if (CharMap[oldParent.Location.X, oldParent.Location.Y] != ' ')
+                {
+                    CharMap[oldParent.Location.X, oldParent.Location.Y] = ' ';
+                    (int y, int x, char @char) foo = new(oldParent.Location.X, oldParent.Location.Y, ' ');
+                    DrawQueue.Enqueue(foo);
+                }
+                //Console.SetCursorPosition(oldParent.Location.X, oldParent.Location.Y);
+                //Console.Write(" ");
+                oldParent = oldParent.ParentNode;
+            }
+
+            oldParent = nextNode.ParentNode;
+            List<Node> parents2 = new();
+            while (oldParent != null)
+            {
+                parents.Add(oldParent);
+                if (CharMap[oldParent.Location.X, oldParent.Location.Y] != ' ')
+                {
+                    CharMap[oldParent.Location.X, oldParent.Location.Y] = ' ';
+                    (int y, int x, char @char) foo = new(oldParent.Location.X, oldParent.Location.Y, ' ');
+                    DrawQueue.Enqueue(foo);
+                }
+                //Console.SetCursorPosition(oldParent.Location.X, oldParent.Location.Y);
+                //Console.Write(" ");
+                oldParent = oldParent.ParentNode;
+            }
+
+            oldParent = nextNode.ParentNode;
         }
 
         private bool Search(Node currentNode, bool shouldDraw)
@@ -283,16 +432,6 @@ namespace CodeAdvent2022
                     Console.SetCursorPosition(currentNode.Location.X, currentNode.Location.Y);
                     Console.ForegroundColor = ConsoleColor.White;
                     Console.Write("+");
-                    var parents = new List<Node>();
-                    var parent = currentNode.ParentNode;
-                    while (parent != null)
-                    {
-                        parents.Add(parent);
-                        parent = parent.ParentNode;
-                    }
-
-                    DrawPath(currentNode);
-                    //Thread.Sleep(10);
                 }
                 var nextNode = OpenList.Dequeue();
                 if (nextNode.Location == this.EndNode.Location)
@@ -303,21 +442,26 @@ namespace CodeAdvent2022
                 {
                     if (shouldDraw)
                     {
-                        Console.SetCursorPosition(currentNode.Location.X, currentNode.Location.Y);
-                        Console.Write(" ");
-
-                        var oldParent = currentNode.ParentNode;
-                        while (oldParent != null)
-                        {
-                            Console.SetCursorPosition(oldParent.Location.X, oldParent.Location.Y);
-                            Console.Write(" ");
-                            oldParent = oldParent.ParentNode;
-                        }
+                        DrawPath(currentNode, nextNode);
                     }
 
                     currentNode = nextNode;
                     currentNode.State = NodeState.Closed;
                     GetAdjacentWalkableNodes(currentNode);
+                }
+                while(DrawQueue.Count > 0)
+                {
+                    var temp = DrawQueue.Dequeue();
+                    if(temp.@char == '<' || temp.@char == '>' || temp.@char == 'v' || temp.@char == '^')
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
+                    Console.SetCursorPosition(temp.x, temp.y);
+                    Console.Write(temp.@char);
                 }
             }
             return false;
@@ -400,6 +544,7 @@ namespace CodeAdvent2022
                 var manhattanDistance = Math.Abs(location.X - endLocation.X) + Math.Abs(location.Y - endLocation.Y);
 
                 H = manhattanDistance + heightDiff * 100;
+                H = Math.Max(manhattanDistance, heightDiff);
             }
             State = NodeState.Untested;
         }
