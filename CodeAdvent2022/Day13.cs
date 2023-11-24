@@ -29,33 +29,39 @@ namespace CodeAdvent2022
             }
         }
 
-        private bool Compare(List<object> packet1, List<object> packet2)
+        private int Compare(List<object> packet1, List<object> packet2)
         {
-
             for (int i = 0; i <= packet1.Count; i++)
             {
                 if (i >= packet1.Count)
                 {
-                    return false;
+                    return -1;
                 }
                 var item1 = packet1[i];
                 var item2 = packet2[i];
 
                 if(item1.GetType() == typeof(List<object>) && item2.GetType() == typeof(List<object>))
+                {
+                    var comp = Compare((List<object>)item1, (List<object>)item2);
+                    if(comp != 0)
+                    {
+                        return comp;
+                    }
+                }
 
                 if (item1.GetType() == typeof(int) && item2.GetType() == typeof(int))
                 {
                     if ((int)item1 < (int)item2)
                     {
-                        return true;
+                        return 1;
                     }
                     else if ((int)item1 > (int)item2)
                     {
-                        return false;
+                        return -1;
                     }
                 }
             }
-            return true;
+            return 0;
 
         }
 
