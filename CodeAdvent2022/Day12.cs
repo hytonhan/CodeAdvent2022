@@ -51,7 +51,7 @@ namespace CodeAdvent2022
                 }
             }
 
-            bool drawFirst = true;
+            bool drawFirst = false;
             var search = new SearchClass(points, start, end, width, height, drawFirst);
             Console.CursorVisible = false;
             var path = search.FindPath();
