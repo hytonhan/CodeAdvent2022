@@ -96,6 +96,7 @@ namespace CodeAdvent2022
             float x = (B2 * C1 - B1 * C2) / delta;
             float y = (A1 * C2 - A2 * C1) / delta;
 
+            // DEBUGGERISSA EKAN PITÄIS OLLA INTERSECT pistees (9, 18)
             if (x >= line1.Start.X && x <= line1.End.X)
             {
                 intersect = new Loc((int)x, (int)y);
