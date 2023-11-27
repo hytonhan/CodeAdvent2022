@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -16,9 +17,17 @@ namespace CodeAdvent2022
 
         public void Run()
         {
-            int targetY = 10;
-            ParseInput(_testInputFilename, out var sensors, out var beacons);
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            //int targetY = 10;
+            //(int x, int y) dims = new(20, 20);
+            int targetY = 2000000;
+            (int x, int y) dims = new(4000000, 4000000);
+
+            ParseInput(_inputFilename, out var sensors, out var beacons);
             List<int> coveredBySensorCoords = ProcessSensorCoverageOnTargetRow(sensors, targetY);
+
+            var orderedBeacons = sensors.OrderByDescending(x => x.DistanceToBeacon);
 
             var beaconsOnTargetRow = beacons.Where(x => x.Y == targetY);
             foreach (var beacon in beaconsOnTargetRow)
@@ -26,12 +35,14 @@ namespace CodeAdvent2022
                 coveredBySensorCoords.RemoveAll(x => x == beacon.X);
             }
 
-            List<Line> lines = new();
+            stopwatch.Stop();
+            Console.WriteLine($"Part 1 time: {stopwatch.ElapsedMilliseconds} ms");
+            stopwatch.Restart();
 
             List<Line> upLines = new();
             List<Line> downLines = new();
-            List<Loc> intersects = new();
-            foreach(var sensor in sensors)
+
+            foreach (var sensor in sensors)
             {
                 var loc1 = new Loc(sensor.X, sensor.Y + sensor.DistanceToBeacon);
                 var loc2 = new Loc(sensor.X + sensor.DistanceToBeacon, sensor.Y);
@@ -42,11 +53,6 @@ namespace CodeAdvent2022
                 var line3 = new Line(loc3, loc4, -1);
                 var line4 = new Line(loc4, loc1, 1);
 
-                lines.Add(line1);
-                lines.Add(line2);
-                lines.Add(line3);
-                lines.Add(line4);
-
                 upLines.Add(line2);
                 upLines.Add(line4);
 
@@ -54,71 +60,87 @@ namespace CodeAdvent2022
                 downLines.Add(line3);
             }
 
-            foreach(var line1 in upLines)
+            List<Loc> intersects = new();
+            foreach (var line1 in upLines)
             {
-                foreach(var line2 in downLines)
+                foreach (var line2 in downLines)
                 {
                     if (Intersects(line1, line2, out Loc intersect))
                     {
+                        if (intersects.Where(x => x.X == intersect.X && x.Y == intersect.Y).Any())
+                        {
+                            continue;
+                        }
                         intersects.Add(intersect);
                     }
                 }
             }
 
-            var filtered = intersects.Where(x => x.X >= 0 && x.X <= 20 && x.Y >= 0 && x.Y <= 20).ToList(); ;
+            List<Loc> places = new();
+            foreach (var intersect in intersects)
+            {
+                var right = new Loc(intersect.X + 1, intersect.Y);
+                var left = new Loc(intersect.X - 1, intersect.Y);
+                var top = new Loc(intersect.X, intersect.Y + 1);
+                var bottom = new Loc(intersect.X, intersect.Y - 1);
+
+                var temp = new List<Loc>()
+                {
+                    right,
+                    left,
+                    top,
+                    bottom
+                };
+                foreach (var location in temp)
+                {
+                    var anySensorInRage = sensors.Where(sensor => Math.Abs(location.X - sensor.X) + Math.Abs(location.Y - sensor.Y) <= sensor.DistanceToBeacon).Any();
+                    if (anySensorInRage == false)
+                    {
+                        if (location.X < 0 || location.X > dims.x || location.Y < 0 || location.Y > dims.y)
+                        {
+                            continue;
+                        }
+                        if (places.Where(x => x.X == location.X && x.Y == location.Y).Any())
+                        {
+                            continue;
+                        }
+                        places.Add(location);
+                    }
+                }
+            }
+            Console.WriteLine($"Part 2 time: {stopwatch.ElapsedMilliseconds} ms");
+            stopwatch.Stop();
 
             Console.WriteLine($"Coords where beacon can't be: {coveredBySensorCoords.Distinct().Count()}");
+
+            var places2 = places.Where(x => x.X >= 0 && x.Y >= 0 && x.X <= dims.x && x.Y <= dims.y);
+            var winner = places2.Single();
+            Console.WriteLine($"Tuning freq: {winner.X * 4000000 + winner.Y}");
         }
 
         private bool Intersects(Line line1, Line line2, out Loc intersect)
         {
             intersect = null;
-            // Instead of taking x,y as the variables to solve for,
-            // write (x,y) =(x1,y1)+t(x2−x1,y2−y1) =(x3,y3)+u(x4−x3,y4−y3) 
+            long A1 = line1.End.Y - line1.Start.Y;
+            long B1 = line1.Start.X - line1.End.X;
+            long C1 = line1.Start.Y * (line1.End.X - line1.Start.X) - (A1) * line1.Start.X;
+            long A2 = line2.End.Y - line2.Start.Y;
+            long B2 = line2.Start.X - line2.End.X;
+            long C2 = line2.Start.Y * (line2.End.X - line2.Start.X) - (A2) * line2.Start.X;
 
-            float a1 = line1.End.Y - line1.Start.Y;
-            float intercept = line1.Start.Y - line1.Coefficient * line1.Start.X;
+            long determinant = A1 * B2 - A2 * B1;
 
-            float A1 = line1.End.Y - line1.Start.Y;
-            float B1 = line1.Start.X - line1.End.X;
-            float C1 = line1.Start.Y * (line1.End.X - line1.Start.X) - (A1) * line1.Start.X;
-            float A2 = line2.End.Y - line2.Start.Y;
-            float B2 = line2.Start.X - line2.End.X;
-            float C2 = line2.Start.Y * (line2.End.X - line2.Start.X) - (A2) * line2.Start.X;
+            long x = (B2 * -C1 - B1 * -C2) / determinant;
+            long y = (A1 * -C2 - A2 * -C1) / determinant;
 
-            float delta = A1 * B2 - A2 * B1;
-            if (delta == 0)
-            {
-                Console.WriteLine($"Error!");
-                return false;
-            }
-
-            float x = (B2 * C1 - B1 * C2) / delta;
-            float y = (A1 * C2 - A2 * C1) / delta;
-
-            // DEBUGGERISSA EKAN PITÄIS OLLA INTERSECT pistees (9, 18)
-            if (x >= line1.Start.X && x <= line1.End.X)
+            if (x >= line1.Start.X && x <= line1.End.X ||
+                x >= line1.End.X && x <= line1.Start.X)
             {
                 intersect = new Loc((int)x, (int)y);
                 return true;
 
             }
             return false;
-
-
-            //A = y2 - y1; B = x1 - x2; C = Ax1 + By1
-            //float A1 = line1.End.Y - line1.Start.Y;
-            //float B1 = line1.Start.X - line1.End.X;
-            //float A2 = line2.End.Y - line2.Start.Y;
-            //float B2 = line2.Start.X - line2.End.X;
-            //float C1 = A1 * line2
-            //float delta = A1 * B2 - A2 * B1;
-
-            //if (delta == 0)
-            //    throw new ArgumentException("Lines are parallel");
-
-            //float x = (B2 * C1 - B1 * C2) / delta;
-            //float y = (A1 * C2 - A2 * C1) / delta;
         }
 
         private List<int> ProcessSensorCoverageOnTargetRow(
@@ -199,14 +221,14 @@ namespace CodeAdvent2022
 
     class Loc
     {
-        public Loc(int x, int y)
+        public Loc(long x, long y)
         {
             X = x;
             Y = y;
         }
 
-        public int X;
-        public int Y;
+        public long X;
+        public long Y;
     }
 
     class Beacon

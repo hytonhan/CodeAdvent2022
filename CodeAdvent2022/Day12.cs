@@ -27,40 +27,18 @@ namespace CodeAdvent2022
             Point end = null;
             int width = lines.First().Length;
             int height = lines.Length;
-            List<Point> points = new List<Point>();
-
-            for (int i = 0; i < lines.Length; i++)
-            {
-                for (int j = 0; j < lines[i].Length; j++)
-                {
-                    if (lines[i][j] == 'S')
-                    {
-                        start = new Point(j, i, 'a' - 'a');
-                        points.Add(start);
-                    }
-                    else if (lines[i][j] == 'E')
-                    {
-                        end = new Point(j, i, 'z' - 'a');
-                        points.Add(end);
-                    }
-                    else
-                    {
-                        var temp = new Point(j, i, lines[i][j] - 'a');
-                        points.Add(temp);
-                    }
-                }
-            }
+            List<Point> points = InitMap(lines, ref start, ref end);
 
             bool drawFirst = false;
             var search = new SearchClass(points, start, end, width, height, drawFirst);
             Console.CursorVisible = false;
             var path = search.FindPath();
-            Console.CursorVisible = true;
 
             if (drawFirst)
             {
                 Console.SetCursorPosition(0, height);
             }
+            Console.CursorVisible = true;
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine($"");
             Console.WriteLine($"Steps: {path.Count()}. Execution time: {stopwatch.ElapsedMilliseconds} ms");
@@ -109,6 +87,33 @@ namespace CodeAdvent2022
             stopwatch.Stop();
             var avg = (float)stopwatch.ElapsedMilliseconds / (float)startPosCount;
             Console.WriteLine($"Shortest path from height 'a': {paths.Where(x => x != 0).OrderBy(x => x).First()}. Execution time (part 2): {stopwatch.ElapsedMilliseconds} ms. Avg: {avg}.");
+        }
+
+        private List<Point> InitMap(string[] lines, ref Point start, ref Point end)
+        {
+            List<Point> points = new();
+            for (int i = 0; i < lines.Length; i++)
+            {
+                for (int j = 0; j < lines[i].Length; j++)
+                {
+                    if (lines[i][j] == 'S')
+                    {
+                        start = new Point(j, i, 'a' - 'a');
+                        points.Add(start);
+                    }
+                    else if (lines[i][j] == 'E')
+                    {
+                        end = new Point(j, i, 'z' - 'a');
+                        points.Add(end);
+                    }
+                    else
+                    {
+                        var temp = new Point(j, i, lines[i][j] - 'a');
+                        points.Add(temp);
+                    }
+                }
+            }
+            return points;
         }
     }
 
@@ -505,12 +510,12 @@ namespace CodeAdvent2022
                     int gTemp = fromNode.G + traversalCost;
                     if (gTemp < node.G)
                     {
-                        node.ParentNode = fromNode;
-                        node.G = gTemp;
-                        var items = new PriorityQueue<Node, double>(OpenList.UnorderedItems);
-                        OpenList.Clear();
-                        OpenList.EnqueueRange(items.UnorderedItems.Where(x => x.Element != node));
-                        OpenList.Enqueue(node, node.F);
+                        //node.ParentNode = fromNode;
+                        //node.G = gTemp;
+                        //var items = new PriorityQueue<Node, double>(OpenList.UnorderedItems);
+                        //OpenList.Clear();
+                        //OpenList.EnqueueRange(items.UnorderedItems.Where(x => x.Element != node));
+                        //OpenList.Enqueue(node, node.F);
                     }
                 }
                 else
@@ -544,7 +549,7 @@ namespace CodeAdvent2022
                 var manhattanDistance = Math.Abs(location.X - endLocation.X) + Math.Abs(location.Y - endLocation.Y);
 
                 H = manhattanDistance + heightDiff * 100;
-                H = Math.Max(manhattanDistance, heightDiff);
+                //H = Math.Max(manhattanDistance, heightDiff);
             }
             State = NodeState.Untested;
         }
