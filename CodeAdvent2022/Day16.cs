@@ -13,36 +13,85 @@ namespace CodeAdvent2022
         const string _inputFilename = "day16_input.txt";
         const string _testInputFilename = "day16_input_test.txt";
 
+        private Dictionary<string, Dictionary<string, int>> _matrix2 = new();
+
         public void Run()
         {
-            List<Valve> valves = ParseInput(_testInputFilename);
+            List<Valve> valves = ParseInput(_inputFilename);
+            InitDistanceMatrix(valves);
+            Valve startValve = valves.Where(x => x.Id == "AA").First();
+            Dictionary<Valve, bool> allOpenValves = new Dictionary<Valve, bool>(valves.Where(x => x.FlowRate != 0).Select(x => new KeyValuePair<Valve, bool>(x, false)));
 
-            Dictionary<Valve, Dictionary<Valve, int>> matrix = new();
+            var solution = Calculate(startValve, 30, 0, allOpenValves);
 
-            foreach(var valve in valves)
+            Console.WriteLine($"Best pressure: {solution}");
+        }
+
+        private void InitDistanceMatrix(List<Valve> valves)
+        {
+            foreach (var valve in valves)
             {
-                Dictionary<Valve, int> temp = new();
+                Dictionary<string, int> temp2 = new();
                 var otherValves = valves.Where(x => x != valve).ToList();
-                foreach(var other in otherValves)
+                foreach (var other in otherValves)
                 {
                     var start = valve;
                     var destination = other;
 
                     int distance = 0;
-                    while(Foo(start, destination, ref distance) == false)
+                    List<Valve> nextValveList = new();
+                    nextValveList.Add(start);
+                    bool endFound = false;
+                    while (true)
                     {
+                        distance++;
+                        List<Valve> tempList = new();
+                        foreach (var nextValve in nextValveList)
+                        {
+                            endFound = Foo(nextValve, destination);
+                            if (endFound) break;
+                            tempList.AddRange(nextValve.LeadsTo);
+                        }
 
+                        if (endFound) break;
+                        nextValveList.Clear();
+                        nextValveList.AddRange(tempList);
                     }
-
-                    //Find shortest path to other
+                    temp2.Add(destination.Id, distance);
                 }
+                _matrix2.Add(valve.Id, temp2);
             }
         }
 
-        private bool Foo(Valve start, Valve destination, ref int distance)
+        private int Calculate(Valve start, int time, int score, Dictionary<Valve, bool> openValves)
         {
-            distance++;
-            foreach(var valve in start.LeadsTo)
+            var timeBackup = time;
+            var scoreBackup = score;
+            var scores = new List<int>();
+            foreach (var openValve in openValves)
+            {
+                var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
+                var distance = _matrix2[start.Id][openValve.Key.Id];
+                if (distance + 1 > time)
+                {
+                    scores.Add(score);
+                }
+                else
+                {
+                    time -= distance + 1;
+                    score += time * openValve.Key.FlowRate;
+                    scores.Add(Calculate(openValve.Key, time, score, newValves));
+                }
+                time = timeBackup;
+                score = scoreBackup;
+            }
+            var returnValue = scores.Count == 0 ? score : scores.Max();
+            return returnValue;
+        }
+
+        private bool Foo(Valve start, Valve destination)
+        {
+            foreach (var valve in start.LeadsTo)
             {
                 if (valve == destination) return true;
             }
@@ -53,7 +102,7 @@ namespace CodeAdvent2022
         {
             List<Valve> valves = new();
 
-            string[] lines = File.ReadAllLines(_testInputFilename);
+            string[] lines = File.ReadAllLines(filename);
             foreach (var line in lines)
             {
                 var parts = line.Replace("Valve ", "")
