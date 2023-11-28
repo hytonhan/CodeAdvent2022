@@ -29,7 +29,7 @@ namespace CodeAdvent2022
             int height = lines.Length;
             List<Point> points = InitMap(lines, ref start, ref end);
 
-            bool drawFirst = false;
+            bool drawFirst = true;
             var search = new SearchClass(points, start, end, width, height, drawFirst);
             Console.CursorVisible = false;
             var path = search.FindPath();
@@ -510,12 +510,12 @@ namespace CodeAdvent2022
                     int gTemp = fromNode.G + traversalCost;
                     if (gTemp < node.G)
                     {
-                        //node.ParentNode = fromNode;
-                        //node.G = gTemp;
-                        //var items = new PriorityQueue<Node, double>(OpenList.UnorderedItems);
-                        //OpenList.Clear();
-                        //OpenList.EnqueueRange(items.UnorderedItems.Where(x => x.Element != node));
-                        //OpenList.Enqueue(node, node.F);
+                        node.ParentNode = fromNode;
+                        node.G = gTemp;
+                        var items = new PriorityQueue<Node, double>(OpenList.UnorderedItems);
+                        OpenList.Clear();
+                        OpenList.EnqueueRange(items.UnorderedItems.Where(x => x.Element != node));
+                        OpenList.Enqueue(node, node.F);
                     }
                 }
                 else
@@ -548,8 +548,8 @@ namespace CodeAdvent2022
                 var heightDiff = endLocation.Height - location.Height;
                 var manhattanDistance = Math.Abs(location.X - endLocation.X) + Math.Abs(location.Y - endLocation.Y);
 
-                H = manhattanDistance + heightDiff * 100;
-                //H = Math.Max(manhattanDistance, heightDiff);
+                //H = manhattanDistance + heightDiff * 100;
+                H = Math.Max(manhattanDistance, heightDiff);
             }
             State = NodeState.Untested;
         }
