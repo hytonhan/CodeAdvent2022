@@ -52,7 +52,9 @@ namespace CodeAdvent2022
                 { "z", Outcome.Win }
             };
 
-            string[] lines = File.ReadAllLines(_inputFilename);
+            //string[] lines = File.ReadAllLines(_inputFilename);
+            using var reader = new StreamReader(_inputFilename);
+            var lines = reader.ReadToEnd().Split(Environment.NewLine);
 
             int defaultPoints = CalculatePoints(opponentMapper, defaultMapper, lines);
             int newPoints = CalculatePoints(opponentMapper, newMapper, lines);

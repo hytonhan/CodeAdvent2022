@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Markup;
 
 namespace CodeAdvent2022
 {
@@ -35,7 +36,7 @@ namespace CodeAdvent2022
                 typeof(Day15),
                 typeof(Day16)
             };
-            _container.Collection.Register<IDay>(days);
+            _container.Collection.Register<IDay>(days, Lifestyle.Transient);
 
             _container.Verify();
         }
@@ -43,26 +44,20 @@ namespace CodeAdvent2022
         public static void Main()
         {
             Console.ForegroundColor = ConsoleColor.White;
-            //Console.WriteLine("Hello world!");
 
-            var type = typeof(IDay);
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .Where(p => type.IsAssignableFrom(p));
-
-            var days = _container.GetAllInstances<IDay>();
+            //var days = _container.GetAllInstances<IDay>();
 
             var stopwatch = new Stopwatch();
             while (true)
             {
-                Console.Write($"Select a number between 1 and {days.Count()}, or type all to print all days. -1 to exit. ");
+                Console.Write($"Select a number between 1 and {_container.GetAllInstances<IDay>().Count()}, or type all to print all days. -1 to exit. ");
                 var input = Console.ReadLine();
 
                 if (input == "all")
                 {
                     var dayStopwatch = new Stopwatch();
                     stopwatch.Restart();
-                    foreach (var day in days.OrderBy(x => x.Order))
+                    foreach (var day in _container.GetAllInstances<IDay>().OrderBy(x => x.Order))
                     {
                         dayStopwatch.Restart();
                         Console.WriteLine($"day {day.Order}");
@@ -78,14 +73,15 @@ namespace CodeAdvent2022
                     Console.WriteLine($"Idiot.");
                     continue;
                 }
-                if (result >= 1 && result <= days.Count())
+                if (result >= 1 && result <= _container.GetAllInstances<IDay>().Count())
                 {
-                    var day = days.Where(x => x.Order == result)
-                                  .Single();
+                    var days = _container.GetAllInstances<IDay>();
+                    var day = days.Where(x => x.Order == result).Single();
                     stopwatch.Restart();
                     day.Run();
                     stopwatch.Stop();
-                    Console.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds} ms");
+                    var time = stopwatch.ElapsedMilliseconds < 2 ? $"{stopwatch.ElapsedTicks / 10} us" : $"{stopwatch.ElapsedMilliseconds} ms";
+                    Console.WriteLine($"Execution time: {time}");
                     continue;
                 }
                 if (result == -1)
