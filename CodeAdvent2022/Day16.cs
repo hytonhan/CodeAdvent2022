@@ -23,6 +23,7 @@ namespace CodeAdvent2022
             Dictionary<Valve, bool> allOpenValves = new Dictionary<Valve, bool>(valves.Where(x => x.FlowRate != 0).Select(x => new KeyValuePair<Valve, bool>(x, false)));
 
             var solution = Calculate(startValve, 30, 0, allOpenValves);
+            var solution2 = Calculate(startValve, 30, 0, allOpenValves, _matrix3);
 
             Console.WriteLine($"Best pressure: {solution}");
         }
