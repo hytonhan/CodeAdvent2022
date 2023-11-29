@@ -45,37 +45,69 @@ namespace CodeAdvent2022
             List<int> scores = new();
             Calculate3(startValve, 26, 0, allOpenValves, distanceMatrix, ref output, ref scores, "");
 
+            var maxPathLength = output.Max(x => x.Split(',').Length);
+            var minPathLength = output.Min(x => x.Split(',').Length);
+
             List<string> paths = new();
-            AnotherOne(startValve, allOpenValves, 0, 8, ref paths, "");
+            //AnotherOne(startValve, allOpenValves, 0, 8, ref paths, "");
 
             var pathsOf8 = output.Where(x => x.Split(',').Length == 8).ToList();
             var pathsOf7 = output.Where(x => x.Split(',').Length == 7).ToList();
+            var pathsOf6 = output.Where(x => x.Split(',').Length == 6).ToList();
+            //var pathsOf5 = output.Where(x => x.Split(',').Length == 5).ToList();
+            //var pathsOf4 = output.Where(x => x.Split(',').Length == 4).ToList();
+
+            List<string> test = new();
+            test.AddRange(pathsOf8);
+            test.AddRange(pathsOf7);
+            test.AddRange(pathsOf6);
+
+            var bar = output.Select(x => x.Split(',')[0]).Distinct().ToList();
+
+            var ones = output.Where(x => x.Split(',').Length < 2);
 
             int max = 0;
 
-            for (int i = 0; i < pathsOf8.Count(); i++)
+            var pos = Console.GetCursorPosition();
+            for (int i = 0; i < test.Count(); i++)
             {
-                var path = pathsOf8[i];
+                Console.SetCursorPosition(pos.Left, pos.Top);
+                Console.WriteLine($"{i}/{test.Count()} processed");
+
+                var path = output[i];
                 var score = scores[output.IndexOf(path)];
 
                 var pathNodes = path.Split(',');
-                foreach(var elephantPath in pathsOf7)
+
+                //var others = output.Where(x => !pathNodes.Any(y => output.Contains(y))).ToList();
+
+                //List<string> paths2 = new(output);
+                //foreach(var pathNode in pathNodes)
+                //{
+                //    paths2 = paths2.Where(x => !x.Contains(pathNode)).ToList();
+                //}
+
+                foreach (var elephantPath in test)
                 {
+                    if (elephantPath.Split(',').ToList().Any(x => pathNodes.Contains(x)))
+                    {
+                        continue;
+                    }
                     var parts2 = elephantPath.Split(',');
                     bool skipPath = false;
-                    foreach(var part in parts2)
+                    foreach (var part in parts2)
                     {
-                        if(path.Contains(part))
+                        if (path.Contains(part))
                         {
                             skipPath = true;
                             break;
                         }
                     }
-                    if(skipPath)
+                    if (skipPath)
                     {
                         continue;
                     }
-                    if(score + scores[output.IndexOf(elephantPath)] > max)
+                    if (score + scores[output.IndexOf(elephantPath)] > max)
                     {
                         max = score + scores[output.IndexOf(elephantPath)];
                     }
@@ -201,7 +233,7 @@ namespace CodeAdvent2022
                 {
                     path += "," + openValve.Key.Id;
                 }
-                if(path.Split(',').Length >= maxDepth)
+                if (path.Split(',').Length >= maxDepth)
                 {
                     _out.Add(path);
                     path = pathBackup;
@@ -236,29 +268,24 @@ namespace CodeAdvent2022
                 var distance = distanceMatrix[start.Id][openValve.Key.Id];
                 if (distance + 1 > time)
                 {
-                    //List<string> path = new();
-                    ////foreach(var parent in parents)
-                    ////{
-                    //path.Add(parent);
-                    ////}
                     if (thisAdded)
                     {
                         continue;
                     }
-                    if(parents.Split(',').Length > 8)
+                    if (parents.Split(',').Length > 8)
                     {
                         var relevant = parents.Substring(23);
-                        if(_output.Contains(relevant) == false)
+                        if (_output.Contains(relevant) == false)
                         {
                             _output.Add(relevant);
                             thisAdded = true;
                             _pathScores.Add(score);
                         }
                     }
-                    if (parents.Split(',').Length != 8 && parents.Split(',').Length != 7)
-                    {
-                        continue;
-                    }
+                    //if (parents.Split(',').Length != 8 && parents.Split(',').Length != 7)
+                    //{
+                    //    continue;
+                    //}
                     _output.Add(parents);
                     thisAdded = true;
                     _pathScores.Add(score);
