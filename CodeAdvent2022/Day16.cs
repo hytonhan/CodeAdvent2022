@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -35,11 +37,62 @@ namespace CodeAdvent2022
             Valve startValve = valves.Where(x => x.Id == "AA").First();
             var allOpenValves = new Dictionary<Valve, bool>(valves.Where(x => x.FlowRate != 0)
                                                                   .Select(x => new KeyValuePair<Valve, bool>(x, false)));
-            var solution = Calculate(startValve, 30, 0, allOpenValves, distanceMatrix);
+            //var solution = Calculate(startValve, 30, 0, allOpenValves, distanceMatrix);
+
+            //var sol2 = Calculat2(startValve, 26, 0, allOpenValves, distanceMatrix);
+
+            List<string> output = new();
+            List<int> scores = new();
+            Calculate3(startValve, 26, 0, allOpenValves, distanceMatrix, ref output, ref scores, "");
+
+            List<string> paths = new();
+            AnotherOne(startValve, allOpenValves, 0, 8, ref paths, "");
+
+            var pathsOf8 = output.Where(x => x.Split(',').Length == 8).ToList();
+            var pathsOf7 = output.Where(x => x.Split(',').Length == 7).ToList();
+
+            int max = 0;
+
+            for (int i = 0; i < pathsOf8.Count(); i++)
+            {
+                var path = pathsOf8[i];
+                var score = scores[output.IndexOf(path)];
+
+                var pathNodes = path.Split(',');
+                foreach(var elephantPath in pathsOf7)
+                {
+                    var parts2 = elephantPath.Split(',');
+                    bool skipPath = false;
+                    foreach(var part in parts2)
+                    {
+                        if(path.Contains(part))
+                        {
+                            skipPath = true;
+                            break;
+                        }
+                    }
+                    if(skipPath)
+                    {
+                        continue;
+                    }
+                    if(score + scores[output.IndexOf(elephantPath)] > max)
+                    {
+                        max = score + scores[output.IndexOf(elephantPath)];
+                    }
+                }
+
+            }
+
+            //List<string> output2 = new();
+            //List<int> scores2 = new();
+            //Calculate3(startValve, 30, 0, allOpenValves, distanceMatrix, ref output2, ref scores2, "");
+            //var max = scores2.Max();
+
             Console.WriteLine($"solution calc: {stopwatch.ElapsedMilliseconds} ms");
             stopwatch.Restart();
 
-            Console.WriteLine($"Best pressure: {solution}");
+            //Console.WriteLine($"Best pressure: {solution}");
+            Console.WriteLine($"Best pressure with elephant: {max}");
         }
 
         private Dictionary<string, Dictionary<string, int>> InitDistanceMatrix2(
@@ -127,6 +180,174 @@ namespace CodeAdvent2022
             return;
         }
 
+        private void AnotherOne(
+            Valve start,
+            Dictionary<Valve, bool> openValves,
+            int depth,
+            int maxDepth,
+            ref List<string> _out,
+            string path)
+        {
+            depth++;
+            var pathBackup = path;
+
+            foreach (var openValve in openValves)
+            {
+                if (path.Length == 0)
+                {
+                    path = openValve.Key.Id;
+                }
+                else
+                {
+                    path += "," + openValve.Key.Id;
+                }
+                if(path.Split(',').Length >= maxDepth)
+                {
+                    _out.Add(path);
+                    path = pathBackup;
+                    continue;
+                }
+
+                var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
+                AnotherOne(openValve.Key, newValves, depth, maxDepth, ref _out, path);
+
+                path = pathBackup;
+            }
+        }
+
+        private void Calculate3(
+            Valve start,
+            int time,
+            int score,
+            Dictionary<Valve, bool> openValves,
+            Dictionary<string, Dictionary<string, int>> distanceMatrix,
+            ref List<string> _output,
+            ref List<int> _pathScores,
+            string parents)
+        {
+            var timeBackup = time;
+            var scoreBackup = score;
+            var parentsBackup = parents;
+            var list = new List<Valve>();
+            bool thisAdded = false;
+            foreach (var openValve in openValves)
+            {
+                var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
+                var distance = distanceMatrix[start.Id][openValve.Key.Id];
+                if (distance + 1 > time)
+                {
+                    //List<string> path = new();
+                    ////foreach(var parent in parents)
+                    ////{
+                    //path.Add(parent);
+                    ////}
+                    if (thisAdded)
+                    {
+                        continue;
+                    }
+                    if(parents.Split(',').Length > 8)
+                    {
+                        var relevant = parents.Substring(23);
+                        if(_output.Contains(relevant) == false)
+                        {
+                            _output.Add(relevant);
+                            thisAdded = true;
+                            _pathScores.Add(score);
+                        }
+                    }
+                    if (parents.Split(',').Length != 8 && parents.Split(',').Length != 7)
+                    {
+                        continue;
+                    }
+                    _output.Add(parents);
+                    thisAdded = true;
+                    _pathScores.Add(score);
+
+                }
+                else
+                {
+                    if (parents.Length == 0)
+                    {
+                        parents = openValve.Key.Id;
+                    }
+                    //parents.Add(openValve.Key.Id);
+                    else
+                    {
+                        parents += "," + openValve.Key.Id;
+                    }
+                    time -= distance + 1;
+                    score += time * openValve.Key.FlowRate;
+                    Calculate3(openValve.Key, time, score, newValves, distanceMatrix, ref _output, ref _pathScores, parents);
+                }
+                time = timeBackup;
+                score = scoreBackup;
+                parents = parentsBackup;
+            }
+
+        }
+
+        //private List<Valve> Calculat2(
+        //    Valve start,
+        //    int time,
+        //    int score,
+        //    Dictionary<Valve, bool> openValves,
+        //    Dictionary<string, Dictionary<string, int>> distanceMatrix,
+        //    Foo parent)
+        //{
+
+        //long coeffFor8 = BinomialCoefficient(15, 8);
+        //long coeffFor7 = BinomialCoefficient(15, 7);
+
+        //var paths = new Dictionary<string, List<string>>();
+
+        //var list = new List<Valve>();
+
+        //foreach (var openValve in openValves)
+        //{
+        //    var foo = new Foo(openValve.Key);
+        //    list.Add(foo);
+
+        //    var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
+        //    var distance = distanceMatrix[start.Id][openValve.Key.Id];
+        //    if (distance + 1 > time)
+        //    {
+        //    }
+        //    else
+        //    {
+        //        if (parent != null)
+        //        {
+        //            parent.Children.Add(list);
+        //        }
+        //        time -= distance + 1;
+        //        score += time * openValve.Key.FlowRate;
+        //        var children = Calculat2(openValve.Key, time, score, newValves, distanceMatrix, foo);
+        //        foreach (var child in children)
+        //        {
+        //            list.Add(child);
+        //        }
+        //    }
+        //    time = timeBackup;
+        //    score = scoreBackup;
+        //}
+
+        //return 0;
+        //}
+
+        long BinomialCoefficient(int n, int k)
+        {
+            return Factorial(n) / (Factorial(k) * Factorial(n - k));
+        }
+
+        long Factorial(int n)
+        {
+            if (n == 0 || n == 1)
+            {
+                return 1;
+            }
+
+            return n * Factorial(n - 1);
+        }
+
         private int Calculate(Valve start, int time, int score, Dictionary<Valve, bool> openValves, Dictionary<string, Dictionary<string, int>> distanceMatrix)
         {
             var timeBackup = time;
@@ -186,6 +407,18 @@ namespace CodeAdvent2022
         }
     }
 
+    class Foo
+    {
+        public Foo(Valve valve)
+        {
+            Valve = valve;
+            Children = new();
+        }
+
+        public Valve Valve { get; set; }
+
+        public List<Foo> Children { get; set; }
+    }
     class Valve
     {
         public Valve(string id, int flow, List<string> leadsTo)
