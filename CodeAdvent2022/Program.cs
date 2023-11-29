@@ -41,9 +41,26 @@ namespace CodeAdvent2022
             _container.Verify();
         }
 
-        public static void Main()
+        public static void Main(string[] args)
         {
             Console.ForegroundColor = ConsoleColor.White;
+
+            if(args.Length != 0)
+            {
+                var arg = int.Parse(args[0]);
+                if (arg >= 1 && arg <= _container.GetAllInstances<IDay>().Count())
+                {
+                    var stopwatch2 = new Stopwatch();
+                    var days = _container.GetAllInstances<IDay>();
+                    var day = days.Where(x => x.Order == arg).Single();
+                    stopwatch2.Start();
+                    day.Run();
+                    stopwatch2.Stop();
+                    var time = stopwatch2.ElapsedMilliseconds < 2 ? $"{stopwatch2.ElapsedTicks / 10} us" : $"{stopwatch2.ElapsedMilliseconds} ms";
+                    Console.WriteLine($"Execution time: {time}");
+                    return;
+                }
+            }
 
             //var days = _container.GetAllInstances<IDay>();
 

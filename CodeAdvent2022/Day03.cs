@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,16 +16,22 @@ namespace CodeAdvent2022
         const int letterCount = (int)('z' - 'a');
         public void Run()
         {
-            char foo = 'a';
-            char bar = 'A';
-
-            Console.WriteLine($"a: {(int)foo}. A: {(int)bar}. a+25: {(char)(foo + 25)}. A + 25: {(char)(bar + 25)}");
-
             int sum = 0;
             string[] lines = _input.Split(Environment.NewLine);
             int i = 0;
             int elfGroups = 0;
             string elfGroup = "";
+            foreach (string line in lines)
+            {
+                var ruckSackLength = line.Length;
+
+                var firstCompartment = line.Substring(0, ruckSackLength / 2);
+                var secondCompartment = line.Substring(ruckSackLength / 2);
+
+                //var common = firstCompartment.Intersect(secondCompartment).First();
+                var common = GetMatchingLetters(firstCompartment, secondCompartment)[0];
+                sum += CharToPriorityConverter(common);
+            }
             foreach (string line in lines)
             {
                 i++;
@@ -34,24 +41,42 @@ namespace CodeAdvent2022
                 }
                 if (i == 2)
                 {
-                    elfGroup = new string(elfGroup.Intersect(line).ToArray());
+                    //elfGroup = new string(elfGroup.Intersect(line).ToArray());
+                    elfGroup = new string(GetMatchingLetters(elfGroup, line));
                 }
                 if (i == 3)
                 {
                     i = 0;
-                    elfGroups += CharToPriorityConverter(elfGroup.Intersect(line).Single());
+                    //elfGroups += CharToPriorityConverter(elfGroup.Intersect(line).Single());
+                    elfGroups += CharToPriorityConverter(GetMatchingLetters(elfGroup, line)[0]);
                 }
-                var ruckSackLength = line.Length;
-
-                var firstCompartment = line.Substring(0, ruckSackLength / 2);
-                var secondCompartment = line.Substring(ruckSackLength / 2);
-
-                var common = firstCompartment.Intersect(secondCompartment).Single();
-                sum += CharToPriorityConverter(common);
             }
 
             Console.WriteLine($"Sum of priorities: {sum}");
             Console.WriteLine($"Sum of elfgroups: {elfGroups}");
+        }
+        char[] GetMatchingLetters(string str1, string str2)
+        {
+            // Convert strings to char arrays
+            char[] charArray1 = str1.ToCharArray();
+            char[] charArray2 = str2.ToCharArray();
+
+            // Find common letters without LINQ
+            List<char> commonLetters = new List<char>();
+
+            foreach (char c1 in charArray1)
+            {
+                foreach (char c2 in charArray2)
+                {
+                    if (c1 == c2 && !commonLetters.Contains(c1))
+                    {
+                        commonLetters.Add(c1);
+                        break;
+                    }
+                }
+            }
+
+            return commonLetters.ToArray();
         }
 
         int CharToPriorityConverter(char character)

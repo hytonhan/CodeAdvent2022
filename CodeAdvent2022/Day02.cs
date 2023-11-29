@@ -1,4 +1,6 @@
-﻿using System.Net.Security;
+﻿using System.Diagnostics;
+using System.Net.Security;
+using System.Text.Json;
 
 namespace CodeAdvent2022
 {
@@ -21,34 +23,64 @@ namespace CodeAdvent2022
 
         public void Run()
         {
-            var opponentMapper = new Dictionary<string, Play>
-            {
-                { "a", Play.Rock },
-                { "b", Play.Paper },
-                { "c", Play.Scissors }
-            };
-
-            var defaultMapper = new Dictionary<string, Play>
-            {
-                { "x", Play.Rock },
-                { "y", Play.Paper },
-                { "z", Play.Scissors }
-            };
-
-            var newMapper = new Dictionary<string, Outcome>
-            {
-                { "x", Outcome.Lose },
-                { "y", Outcome.Draw },
-                { "z", Outcome.Win }
-            };
-
+            //var stopwatch = new Stopwatch();
+            //stopwatch.Start();
             var lines = _input.Split(Environment.NewLine);
+            //Console.WriteLine($"input split: {stopwatch.ElapsedTicks / 10} us");
+            //stopwatch.Restart();
 
-            int defaultPoints = CalculatePoints(opponentMapper, defaultMapper, lines);
-            int newPoints = CalculatePoints(opponentMapper, newMapper, lines);
+            var sum = lines.Sum(x => Foo(x));
+            Console.WriteLine($"Points with new default strategy: {sum}");
+            //Console.WriteLine($"part 1: {stopwatch.ElapsedTicks / 10} us");
+            //stopwatch.Restart();
 
-            Console.WriteLine($"Points with default strategy: {defaultPoints}");
-            Console.WriteLine($"Points with outcome strategy: {newPoints}");
+            Dictionary<string, int> foo2 = new();
+            foo2.Add("A X", 0 + 3);
+            foo2.Add("A Y", 3 + 1);
+            foo2.Add("A Z", 6 + 2);
+            foo2.Add("B X", 0 + 1);
+            foo2.Add("B Y", 3 + 2);
+            foo2.Add("B Z", 6 + 3);
+            foo2.Add("C X", 0 + 2);
+            foo2.Add("C Y", 3 + 3);
+            foo2.Add("C Z", 6 + 1);
+            var sum2 = lines.Sum(x => foo2[x]);
+            Console.WriteLine($"Points with new outcome strategy: {sum2}");
+            //Console.WriteLine($"whole thing: {stopwatch.ElapsedTicks / 10} us");
+            //stopwatch.Restart();
+
+
+            //int defaultPoints = CalculatePoints(opponentMapper, defaultMapper, lines);
+            //int newPoints = CalculatePoints(opponentMapper, newMapper, lines);
+
+            ////Console.WriteLine($"Points with default strategy: {defaultPoints}");
+            //Console.WriteLine($"Points with outcome strategy: {newPoints}");
+        }
+
+        private int Foo(string input)
+        {
+            switch (input)
+            {
+                case "A X":
+                    return 3 + 1;
+                case "A Y":
+                    return 6 + 2;
+                case "A Z":
+                    return 0 + 3;
+                case "B X":
+                    return 0 + 1;
+                case "B Y":
+                    return 3 + 2;
+                case "B Z":
+                    return 6 + 3;
+                case "C X":
+                    return 6 + 1;
+                case "C Y":
+                    return 0 + 2;
+                case "C Z":
+                    return 3 + 3;
+            }
+            return 0;
         }
 
         private static int CalculatePoints(
@@ -107,8 +139,8 @@ namespace CodeAdvent2022
         }
 
         private static int CalculatePoints(
-            Dictionary<string, Play> opponentMapper, 
-            Dictionary<string, Play> meMapper, 
+            Dictionary<string, Play> opponentMapper,
+            Dictionary<string, Play> meMapper,
             string[] lines)
         {
             int points = 0;
