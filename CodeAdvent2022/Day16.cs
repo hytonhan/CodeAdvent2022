@@ -23,111 +23,37 @@ namespace CodeAdvent2022
         public void Run()
         {
             _openList.Clear();
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
             List<Valve> valves = ParseInput(_inputFilename);
-            Console.WriteLine($"Input time: {stopwatch.ElapsedMilliseconds} ms");
-            stopwatch.Restart();
 
             Dictionary<string, bool> visited = InitVisitedList(valves);
-            var distanceMatrix = InitDistanceMatrix2(valves, visited);
-            Console.WriteLine($"Matrix init: {stopwatch.ElapsedMilliseconds} ms");
-            stopwatch.Restart();
+            var distanceMatrix = InitDistanceMatrix(valves, visited);
 
             Valve startValve = valves.Where(x => x.Id == "AA").First();
             var allOpenValves = new Dictionary<Valve, bool>(valves.Where(x => x.FlowRate != 0)
                                                                   .Select(x => new KeyValuePair<Valve, bool>(x, false)));
-            //var solution = Calculate(startValve, 30, 0, allOpenValves, distanceMatrix);
-
-            //var sol2 = Calculat2(startValve, 26, 0, allOpenValves, distanceMatrix);
-
-            List<string> output = new();
-            List<int> scores = new();
-            Calculate3(startValve, 26, 0, allOpenValves, distanceMatrix, ref output, ref scores, "");
-
-            var maxPathLength = output.Max(x => x.Split(',').Length);
-            var minPathLength = output.Min(x => x.Split(',').Length);
-
-            List<string> paths = new();
-            //AnotherOne(startValve, allOpenValves, 0, 8, ref paths, "");
-
-            var pathsOf8 = output.Where(x => x.Split(',').Length == 8).ToList();
-            var pathsOf7 = output.Where(x => x.Split(',').Length == 7).ToList();
-            var pathsOf6 = output.Where(x => x.Split(',').Length == 6).ToList();
-            //var pathsOf5 = output.Where(x => x.Split(',').Length == 5).ToList();
-            //var pathsOf4 = output.Where(x => x.Split(',').Length == 4).ToList();
-
-            List<string> test = new();
-            test.AddRange(pathsOf8);
-            test.AddRange(pathsOf7);
-            test.AddRange(pathsOf6);
-
-            var bar = output.Select(x => x.Split(',')[0]).Distinct().ToList();
-
-            var ones = output.Where(x => x.Split(',').Length < 2);
-
-            int max = 0;
-
-            var pos = Console.GetCursorPosition();
-            for (int i = 0; i < test.Count(); i++)
+            Dictionary<int, int> maxScores = new()
             {
-                Console.SetCursorPosition(pos.Left, pos.Top);
-                Console.WriteLine($"{i}/{test.Count()} processed");
+                { 24, 0 },
+                { 19, 0 },
+                { 14, 0 },
+                { 9, 0 },
+                { 4, 0 },
+            };
+            var solution = Part1v2(startValve, 30, 0, 0, 0, allOpenValves, distanceMatrix, ref maxScores);
 
-                var path = output[i];
-                var score = scores[output.IndexOf(path)];
+            Dictionary<int, int> maxScores2 = new()
+            {
+                { 19, 0 },
+                { 14, 0 },
+                { 9, 0 },
+                { 4, 0 },
+            };
+            var solution2 = Part2v2(startValve, startValve, 26, 0, 0, 0, 0, 0, allOpenValves, distanceMatrix, ref maxScores2);
 
-                var pathNodes = path.Split(',');
-
-                //var others = output.Where(x => !pathNodes.Any(y => output.Contains(y))).ToList();
-
-                //List<string> paths2 = new(output);
-                //foreach(var pathNode in pathNodes)
-                //{
-                //    paths2 = paths2.Where(x => !x.Contains(pathNode)).ToList();
-                //}
-
-                foreach (var elephantPath in test)
-                {
-                    if (elephantPath.Split(',').ToList().Any(x => pathNodes.Contains(x)))
-                    {
-                        continue;
-                    }
-                    var parts2 = elephantPath.Split(',');
-                    bool skipPath = false;
-                    foreach (var part in parts2)
-                    {
-                        if (path.Contains(part))
-                        {
-                            skipPath = true;
-                            break;
-                        }
-                    }
-                    if (skipPath)
-                    {
-                        continue;
-                    }
-                    if (score + scores[output.IndexOf(elephantPath)] > max)
-                    {
-                        max = score + scores[output.IndexOf(elephantPath)];
-                    }
-                }
-
-            }
-
-            //List<string> output2 = new();
-            //List<int> scores2 = new();
-            //Calculate3(startValve, 30, 0, allOpenValves, distanceMatrix, ref output2, ref scores2, "");
-            //var max = scores2.Max();
-
-            Console.WriteLine($"solution calc: {stopwatch.ElapsedMilliseconds} ms");
-            stopwatch.Restart();
-
-            //Console.WriteLine($"Best pressure: {solution}");
-            Console.WriteLine($"Best pressure with elephant: {max}");
+            Console.WriteLine($"Best pressure: {solution}");
+            Console.WriteLine($"Best pressure with 1 elephant: {solution2}");
         }
-
-        private Dictionary<string, Dictionary<string, int>> InitDistanceMatrix2(
+        private Dictionary<string, Dictionary<string, int>> InitDistanceMatrix(
             List<Valve> valves,
             Dictionary<string, bool> visited)
         {
@@ -212,193 +138,118 @@ namespace CodeAdvent2022
             return;
         }
 
-        private void AnotherOne(
+        private int Part2v2(
             Valve start,
+            Valve start2,
+            int time,
+            int score,
+            int pressure,
+            int pressure2,
+            int distanceToNext,
+            int distanceToNext2,
             Dictionary<Valve, bool> openValves,
-            int depth,
-            int maxDepth,
-            ref List<string> _out,
-            string path)
+            Dictionary<string, Dictionary<string, int>> distanceMatrix,
+            ref Dictionary<int, int> maxScores)
         {
-            depth++;
-            var pathBackup = path;
-
-            foreach (var openValve in openValves)
+            while (distanceToNext > 0 && distanceToNext2 > 0)
             {
-                if (path.Length == 0)
+                score += pressure + pressure2;
+                distanceToNext--;
+                distanceToNext2--;
+                time--;
+                // Keep track of scores, and return if seems like current path is doomed
+                if (time == 19 || time == 14 || time == 9 || time == 4)
                 {
-                    path = openValve.Key.Id;
+                    if (maxScores[time] > score)
+                    {
+                        return 0;
+                    }
+                    else if (score > maxScores[time])
+                    {
+                        maxScores[time] = score;
+                    }
                 }
-                else
+                if (time == 0)
                 {
-                    path += "," + openValve.Key.Id;
+                    return score;
                 }
-                if (path.Split(',').Length >= maxDepth)
-                {
-                    _out.Add(path);
-                    path = pathBackup;
-                    continue;
-                }
-
-                var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
-                AnotherOne(openValve.Key, newValves, depth, maxDepth, ref _out, path);
-
-                path = pathBackup;
             }
+            var pathScores = new List<int>();
+
+            if (distanceToNext == 0)
+            {
+                pressure += start.FlowRate;
+
+                foreach (var openValve in openValves)
+                {
+                    var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
+
+                    distanceToNext = distanceMatrix[start.Id][openValve.Key.Id] + 1;
+
+                    pathScores.Add(Part2v2(openValve.Key, start2, time, score, pressure, pressure2, distanceToNext, distanceToNext2, newValves, distanceMatrix, ref maxScores));
+                }
+            }
+            if(distanceToNext2 == 0)
+            {
+                pressure2 += start2.FlowRate;
+
+                foreach (var openValve in openValves)
+                {
+                    var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
+
+                    distanceToNext2 = distanceMatrix[start2.Id][openValve.Key.Id] + 1;
+
+                    pathScores.Add(Part2v2(start, openValve.Key, time, score, pressure, pressure2, distanceToNext, distanceToNext2, newValves, distanceMatrix, ref maxScores));
+                }
+            }
+
+            return pathScores.Count() > 0 ? pathScores.Max() : 0;
         }
 
-        private void Calculate3(
+        private int Part1v2(
             Valve start,
             int time,
             int score,
+            int pressure,
+            int distanceToNext,
             Dictionary<Valve, bool> openValves,
             Dictionary<string, Dictionary<string, int>> distanceMatrix,
-            ref List<string> _output,
-            ref List<int> _pathScores,
-            string parents)
+            ref Dictionary<int, int> maxScores)
         {
-            var timeBackup = time;
-            var scoreBackup = score;
-            var parentsBackup = parents;
-            var list = new List<Valve>();
-            bool thisAdded = false;
+            while (distanceToNext > 0)
+            {
+                score += pressure;
+                distanceToNext--;
+                time--;
+                // Keep track of scores, and return if seems like current path is doomed
+                if (time == 24 || time == 19 || time == 14 || time == 9 || time == 4)
+                {
+                    if (maxScores[time] > score)
+                    {
+                        return 0;
+                    }
+                    else if (score > maxScores[time])
+                    {
+                        maxScores[time] = score;
+                    }
+                }
+                if (time == 0)
+                {
+                    return score;
+                }
+            }
+            pressure += start.FlowRate;
+
+            var pathScores = new List<int>();
             foreach (var openValve in openValves)
             {
                 var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
-                var distance = distanceMatrix[start.Id][openValve.Key.Id];
-                if (distance + 1 > time)
-                {
-                    if (thisAdded)
-                    {
-                        continue;
-                    }
-                    if (parents.Split(',').Length > 8)
-                    {
-                        var relevant = parents.Substring(23);
-                        if (_output.Contains(relevant) == false)
-                        {
-                            _output.Add(relevant);
-                            thisAdded = true;
-                            _pathScores.Add(score);
-                        }
-                    }
-                    //if (parents.Split(',').Length != 8 && parents.Split(',').Length != 7)
-                    //{
-                    //    continue;
-                    //}
-                    _output.Add(parents);
-                    thisAdded = true;
-                    _pathScores.Add(score);
 
-                }
-                else
-                {
-                    if (parents.Length == 0)
-                    {
-                        parents = openValve.Key.Id;
-                    }
-                    //parents.Add(openValve.Key.Id);
-                    else
-                    {
-                        parents += "," + openValve.Key.Id;
-                    }
-                    time -= distance + 1;
-                    score += time * openValve.Key.FlowRate;
-                    Calculate3(openValve.Key, time, score, newValves, distanceMatrix, ref _output, ref _pathScores, parents);
-                }
-                time = timeBackup;
-                score = scoreBackup;
-                parents = parentsBackup;
+                distanceToNext = distanceMatrix[start.Id][openValve.Key.Id] + 1;
+
+                pathScores.Add(Part1v2(openValve.Key, time, score, pressure, distanceToNext, newValves, distanceMatrix, ref maxScores));
             }
-
-        }
-
-        //private List<Valve> Calculat2(
-        //    Valve start,
-        //    int time,
-        //    int score,
-        //    Dictionary<Valve, bool> openValves,
-        //    Dictionary<string, Dictionary<string, int>> distanceMatrix,
-        //    Foo parent)
-        //{
-
-        //long coeffFor8 = BinomialCoefficient(15, 8);
-        //long coeffFor7 = BinomialCoefficient(15, 7);
-
-        //var paths = new Dictionary<string, List<string>>();
-
-        //var list = new List<Valve>();
-
-        //foreach (var openValve in openValves)
-        //{
-        //    var foo = new Foo(openValve.Key);
-        //    list.Add(foo);
-
-        //    var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
-        //    var distance = distanceMatrix[start.Id][openValve.Key.Id];
-        //    if (distance + 1 > time)
-        //    {
-        //    }
-        //    else
-        //    {
-        //        if (parent != null)
-        //        {
-        //            parent.Children.Add(list);
-        //        }
-        //        time -= distance + 1;
-        //        score += time * openValve.Key.FlowRate;
-        //        var children = Calculat2(openValve.Key, time, score, newValves, distanceMatrix, foo);
-        //        foreach (var child in children)
-        //        {
-        //            list.Add(child);
-        //        }
-        //    }
-        //    time = timeBackup;
-        //    score = scoreBackup;
-        //}
-
-        //return 0;
-        //}
-
-        long BinomialCoefficient(int n, int k)
-        {
-            return Factorial(n) / (Factorial(k) * Factorial(n - k));
-        }
-
-        long Factorial(int n)
-        {
-            if (n == 0 || n == 1)
-            {
-                return 1;
-            }
-
-            return n * Factorial(n - 1);
-        }
-
-        private int Calculate(Valve start, int time, int score, Dictionary<Valve, bool> openValves, Dictionary<string, Dictionary<string, int>> distanceMatrix)
-        {
-            var timeBackup = time;
-            var scoreBackup = score;
-            var scores = new List<int>();
-            foreach (var openValve in openValves)
-            {
-                var newValves = new Dictionary<Valve, bool>(openValves.Where(x => x.Key != openValve.Key));
-                var distance = distanceMatrix[start.Id][openValve.Key.Id];
-                if (distance + 1 > time)
-                {
-                    scores.Add(score);
-                }
-                else
-                {
-                    time -= distance + 1;
-                    score += time * openValve.Key.FlowRate;
-                    scores.Add(Calculate(openValve.Key, time, score, newValves, distanceMatrix));
-                }
-                time = timeBackup;
-                score = scoreBackup;
-            }
-            var returnValue = scores.Count == 0 ? score : scores.Max();
-            return returnValue;
+            return pathScores.Count() > 0 ? pathScores.Max() : 0;
         }
 
         private List<Valve> ParseInput(string filename)
@@ -434,18 +285,6 @@ namespace CodeAdvent2022
         }
     }
 
-    class Foo
-    {
-        public Foo(Valve valve)
-        {
-            Valve = valve;
-            Children = new();
-        }
-
-        public Valve Valve { get; set; }
-
-        public List<Foo> Children { get; set; }
-    }
     class Valve
     {
         public Valve(string id, int flow, List<string> leadsTo)
